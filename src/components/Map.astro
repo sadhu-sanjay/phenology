@@ -1,0 +1,148 @@
+---
+export const prerender = false
+
+import { pollenGET } from '@src/config/config.ts'
+
+const result = await fetch(pollenGET)
+const pollens = await result.json()
+
+---
+
+<style>
+    .circular-popup {
+        width: 100px; /* Adjust the size of the circular popup */
+        height: 100px; /* Adjust the size of the circular popup */
+        background-color: rgba(255, 255, 255, 0.9); /* Adjust background color and opacity */
+        border-radius: 50%; /* Make the div circular */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow for depth */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 10px;
+    }
+
+</style>
+
+    <div id="map" class="w-full h-full min-w-[100px] min-h-[100px]" >
+    </div>
+
+<script define:vars={{ pollens }} >
+
+    console.log("p", pollens[1])
+
+    var map = L.map('map').setView([51.505, -0.09], 2);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+
+    pollens.forEach((pollen, index) => {
+        let marker = L.marker([pollen.latitude, pollen.longitude]).addTo(map)
+
+
+        var popupContent = `
+    <div style="width: 150px; height: 150px; display: flex; justify-content: center; align-items: center;">
+        <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            ${createSegments(12)}
+            <!-- ${createTexts(12)} -->
+        </svg>
+    </div>`;
+
+var customPopup = L.popup({
+    closeButton: false, // Optional: Hide the close button
+    maxWidth: 120 // Optional: Adjust the maximum width of the popup
+
+}).setContent(popupContent);
+
+function createTexts(numSegments) {
+    var texts = '';
+    var radius = 45;
+    var centerX = 50;
+    var centerY = 50;
+    var angle = 360 / numSegments;
+
+    for (var i = 0; i < numSegments; i++) {
+        var segmentAngle = i * angle + angle / 2; // Angle of the center of the segment
+        var textX = centerX + radius * Math.cos(degToRad(segmentAngle));
+        var textY = centerY + radius * Math.sin(degToRad(segmentAngle));
+
+        texts += `
+            <text x="${textX}" y="${textY}" fill="white" font-size="8" text-anchor="middle" 
+            alignment-baseline="middle" transform="rotate(${segmentAngle}, ${textX}, ${textY})">Segment ${i+1}</text>
+        `;
+    }
+
+    return texts;
+}
+
+function createSegments(numSegments) {
+    var segments = '';
+    var radius = 45;
+    var centerX = 50;
+    var centerY = 50;
+    var angle = 360 / numSegments;
+
+    for (var i = 0; i < numSegments; i++) {
+        var startAngle = i * angle;
+        var endAngle = (i + 1) * angle;
+
+        var startX = centerX + radius * Math.cos(degToRad(startAngle));
+        var startY = centerY + radius * Math.sin(degToRad(startAngle));
+        var endX = centerX + radius * Math.cos(degToRad(endAngle));
+        var endY = centerY + radius * Math.sin(degToRad(endAngle));
+
+        segments += `
+            <path class="hover:scale-105 transition-all "  d="M${centerX},${centerY} L${startX},${startY} A${radius},${radius} 0 0,1 ${endX},${endY} Z" 
+            fill="${getRandomColor()}"  />
+        `;
+    }
+
+    return segments;
+}
+
+function scaleSegment(segment) {
+    segment.setAttribute('transform', 'scale(1.1)');
+    
+    segment.style.filter = 'drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))';
+}
+
+function scaleSegment(segment) {
+    
+    segment.setAttribute('transform', 'scale(1.1)');
+    segment.style.filter = 'drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))';
+}
+
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+
+
+        var customPopup = L.popup({
+                closeButton: false, // Optional: Hide the close button
+                maxWidth: 100 // Optional: Adjust the maximum width of the popup
+            }).setContent(popupContent);
+
+        marker.bindPopup(customPopup)
+
+        // Optionally, open the popup when the marker is clicked
+        marker.on('click', function () {
+            marker.openPopup();
+        });
+
+    })
+
+</script>
+
